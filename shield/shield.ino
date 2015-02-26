@@ -1,16 +1,14 @@
 #include <Wire.h>
-#include <Adafruit_LSM303.h>
-#include <Adafruit_NeoPixel.h>
+#include <Adafruit_LSM303.h>    // https://github.com/adafruit/Adafruit_Sensor
+#include <Adafruit_NeoPixel.h>  // https://github.com/adafruit/Adafruit_NeoPixel
 
 Adafruit_LSM303 lsm;
 
 // configure NeoPixel with 51 pixels attached to pin 6
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(51, 6, NEO_GRB + NEO_KHZ800);
 
-uint8_t mode = 0;
-uint8_t last_mode = 0;
-uint8_t d = 50;
-boolean cw = true;
+uint8_t mode = 0;       // mode of operation
+uint8_t last_mode = 0;  // previous mode of operation
 int8_t w = 0;
 uint8_t wm = 0;
 
@@ -38,6 +36,9 @@ void setup()
 
 void loop() 
 {
+  uint8_t d = 50;     // main loop delay
+  boolean cw = true;  // clockwise spin
+  
   lsm.read();
   //Serial.print("Accel (x,y,z): ");
   //Serial.print((int)lsm.accelData.x); Serial.print(",");
@@ -86,6 +87,7 @@ void fill() {
   strip.show();
 }
 
+
 // Sparkle two random pixels bright white for 5ms, return them to original color
 void sparkle() {
     uint8_t r1 = random(0,50);
@@ -100,6 +102,7 @@ void sparkle() {
     strip.setPixelColor(r2, sc2 );
     strip.show();
 }
+
 
 void drawRWB() {
     for(uint16_t i=0; i<strip.numPixels(); i++) {
@@ -116,6 +119,7 @@ void drawRWB() {
   
   strip.show();
 }
+
 
 // Spin pixels one position in specified direction; refresh pixels
 void spin(boolean cw) {
@@ -137,6 +141,7 @@ void spin(boolean cw) {
   strip.show();
 }
 
+
 // Fill all pixels with color c; refresh pixels
 void setAllPixelColor(uint32_t c) {
   for(uint16_t i=0; i<strip.numPixels(); i++) {
@@ -144,6 +149,7 @@ void setAllPixelColor(uint32_t c) {
   }
   strip.show();
 }
+
 
 // Divide pixels into three segments filling each with one of the specified colors; refresh pixels
 void setThreeColors(uint32_t c1, uint32_t c2, uint32_t c3) {
