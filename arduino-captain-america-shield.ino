@@ -54,8 +54,8 @@ void loop()
   //Serial.print("Y: "); Serial.print((int)lsm.accelData.y);       Serial.print(" ");
   //Serial.print("Z: "); Serial.println((int)lsm.accelData.z);     Serial.print(" ");
   
-  if( lsm.accelData.z < -800 ) { mode = 1; }                                // up
-  else if( lsm.accelData.z > 800 ) { mode = 2; }                            // down
+  if( lsm.accelData.z < -800 ) { mode = 1; }                                // hold up
+  else if( lsm.accelData.z > 800 ) { mode = 2; }                            // hold down
   else if ( lsm.accelData.x < 800 && lsm.accelData.y > 600 ) { mode = 3; }  // rotate right
   else if ( lsm.accelData.x < 800 && lsm.accelData.y < -600 ) { mode = 4; } // rotate left
   else { mode = 0; }
@@ -150,7 +150,7 @@ void spin(boolean cw, uint8_t steps, uint8_t wait) {
   }
 }
 
-
+// Fill all pixels with color c; refresh pixels
 void colorFill(uint32_t c) {
   for(uint16_t i=0; i<strip.numPixels(); i++) {
       strip.setPixelColor(i, c);
@@ -158,12 +158,11 @@ void colorFill(uint32_t c) {
   strip.show();
 }
 
-
+// Divide pixes into three segments filling each with one of the specified colors; refresh pixels
 void threeColors(uint32_t c1, uint32_t c2, uint32_t c3) {
   uint32_t c;
   
   for(uint16_t i=0; i<strip.numPixels(); i++) {
-    
     if( i < (strip.numPixels() / 3) ) c = c1;
     else if(i < (strip.numPixels() / 3*2) ) c = c2;
     else c = c3;
