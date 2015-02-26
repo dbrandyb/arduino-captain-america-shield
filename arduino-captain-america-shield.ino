@@ -2,18 +2,10 @@
 #include <Adafruit_LSM303.h>
 #include <Adafruit_NeoPixel.h>
 
-#define PIN 6
-
 Adafruit_LSM303 lsm;
 
-// Parameter 1 = number of pixels in strip
-// Parameter 2 = pin number (most are valid)
-// Parameter 3 = pixel type flags, add together as needed:
-//   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
-//   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
-//   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
-//   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(51, PIN, NEO_GRB + NEO_KHZ800);
+// configure NeoPixel with 51 pixels attached to pin 6
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(51, 6, NEO_GRB + NEO_KHZ800);
 
 uint8_t mode = 0;
 uint8_t last_mode = 0;
@@ -26,33 +18,31 @@ uint32_t red, white, bright_white, blue, yellow;
 
 void setup() 
 {
+  // configure serial port
   Serial.begin(9600);
  
-  strip.begin();
-  strip.show();
-   
-  // Try to initialise and warn if we couldn't detect the chip
-  if (!lsm.begin())
-  {
-    Serial.println("Oops ... unable to initialize the LSM303. Check your wiring!");
-    while (1);
-  }
-
-  // Initialize colors
+  // initialize colors
   red = strip.Color(50,0,0);
   white = strip.Color(50,50,50);
   bright_white = strip.Color(200,200,200);
   blue = strip.Color(0,50,70);
   yellow = strip.Color(64,35,0);
+ 
+  // initialize LSM303 comminucations
+  if (!lsm.begin()) Serial.println("unable to initialize the LSM303");
+  
+  strip.begin();
+  strip.show();
 }
 
 
 void loop() 
 {
   lsm.read();
-  //Serial.print("Accel X: "); Serial.print((int)lsm.accelData.x); Serial.print(" ");
-  //Serial.print("Y: "); Serial.print((int)lsm.accelData.y);       Serial.print(" ");
-  //Serial.print("Z: "); Serial.println((int)lsm.accelData.z);     Serial.print(" ");
+  //Serial.print("Accel (x,y,z): ");
+  //Serial.print((int)lsm.accelData.x); Serial.print(",");
+  //Serial.print((int)lsm.accelData.y); Serial.print(",");
+  //Serial.println((int)lsm.accelData.z);
   
   if( lsm.accelData.z < -800 ) { mode = 1; }                                // hold up
   else if( lsm.accelData.z > 800 ) { mode = 2; }                            // hold down
@@ -60,19 +50,21 @@ void loop()
   else if ( lsm.accelData.x < 800 && lsm.accelData.y < -600 ) { mode = 4; } // rotate left
   else { mode = 0; }
 
+  // if mode changed since last refresh...
   if( mode != last_mode ) {    
-    if( 1 == mode ) { colorFill(yellow); }
-    else if ( 2 == mode ) { colorFill(red); }
+    if( 1 == mode ) { setAllPixelColor(yellow); }
+    else if ( 2 == mode ) { setAllPixelColor(red); }
     else if ( 3 == mode ) { d = 0; wm = 0; w = 50; }
-    else if ( 4 == mode ) { d = 5 ; threeColors(red, white, blue); }
+    else if ( 4 == mode ) { d = 5 ; setThreeColors(red, white, blue); }
     else { d = 50 ; drawRWB(); }
     
+    // randomly choose spin direction
     cw = ( random(0,100) > 50 )?true:false;
     last_mode = mode;
   }
  
   if( 3 == mode ) { fill(); }
-  else { spin(cw, 1, 0); }
+  else { spin(cw); }
   sparkle();
   delay(d);
 }
@@ -94,7 +86,7 @@ void fill() {
   strip.show();
 }
 
-
+// Sparkle two random pixels bright white for 5ms, return them to original color
 void sparkle() {
     uint8_t r1 = random(0,50);
     uint8_t r2 = random(0,50);
@@ -107,7 +99,6 @@ void sparkle() {
     strip.setPixelColor(r1, sc1 );
     strip.setPixelColor(r2, sc2 );
     strip.show();
-
 }
 
 void drawRWB() {
@@ -122,44 +113,40 @@ void drawRWB() {
       strip.setPixelColor(i++, blue );
       strip.setPixelColor(i,   blue );
   }
+  
   strip.show();
 }
 
-
-void spin(boolean cw, uint8_t steps, uint8_t wait) {
-  for(uint16_t i=0; i<steps; i++) {
-    uint32_t c = strip.getPixelColor( (true==cw)?strip.numPixels()-1 : 0); 
-    
-    if( true==cw ) {
-      for(uint16_t j=strip.numPixels()-1; j>0 ; j--) {
-        strip.setPixelColor(j, strip.getPixelColor(j-1) );
-      }
-    }
-    else {
-      for(uint16_t j=0 ; j<strip.numPixels()-1; j++) {
-        strip.setPixelColor(j, strip.getPixelColor(j+1) );
-      }
-    }
-    
-    strip.setPixelColor( (true==cw)?0:strip.numPixels()-1, c);
-    
-    if( 0 == wait ) {
-      strip.show();
-      delay(wait);
+// Spin pixels one position in specified direction; refresh pixels
+void spin(boolean cw) {
+  uint32_t c = strip.getPixelColor( (true==cw)?strip.numPixels()-1 : 0); 
+  
+  if( true==cw ) {
+    for(uint16_t j=strip.numPixels()-1; j>0 ; j--) {
+      strip.setPixelColor(j, strip.getPixelColor(j-1) );
     }
   }
+  else {
+    for(uint16_t j=0 ; j<strip.numPixels()-1; j++) {
+      strip.setPixelColor(j, strip.getPixelColor(j+1) );
+    }
+  }
+    
+  strip.setPixelColor( (true==cw)?0:strip.numPixels()-1, c);
+  
+  strip.show();
 }
 
 // Fill all pixels with color c; refresh pixels
-void colorFill(uint32_t c) {
+void setAllPixelColor(uint32_t c) {
   for(uint16_t i=0; i<strip.numPixels(); i++) {
       strip.setPixelColor(i, c);
   }
   strip.show();
 }
 
-// Divide pixes into three segments filling each with one of the specified colors; refresh pixels
-void threeColors(uint32_t c1, uint32_t c2, uint32_t c3) {
+// Divide pixels into three segments filling each with one of the specified colors; refresh pixels
+void setThreeColors(uint32_t c1, uint32_t c2, uint32_t c3) {
   uint32_t c;
   
   for(uint16_t i=0; i<strip.numPixels(); i++) {
