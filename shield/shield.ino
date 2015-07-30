@@ -2,6 +2,9 @@
 #include <Adafruit_LSM303.h>    // https://github.com/adafruit/Adafruit_Sensor
 #include <Adafruit_NeoPixel.h>  // https://github.com/adafruit/Adafruit_NeoPixel
 
+// Remember to import Adafruit boards into the Arduino IDE
+// https://github.com/arduino/Arduino/wiki/Unofficial-list-of-3rd-party-boards-support-urls#list-of-3rd-party-boards-support-urls
+
 Adafruit_LSM303 lsm;
 
 // configure NeoPixel with 51 pixels attached to pin 6
